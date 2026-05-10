@@ -29,6 +29,53 @@ const defaultImageFallback = FALLBACK_IMAGE_URL || 'https://images.unsplash.com/
 
 const safeImage = (value, fallback = defaultImageFallback) => getImageUrl(value, fallback);
 
+const showConfirmDialog = ({
+  title = 'Are you sure?',
+  message = 'This action cannot be undone.',
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  tone = 'danger',
+} = {}) => new Promise((resolve) => {
+  document.querySelector('.app-confirm-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'app-confirm-overlay';
+  overlay.innerHTML = `
+    <div class="app-confirm-modal app-confirm-modal--${escapeAttr(tone)}" role="dialog" aria-modal="true" aria-labelledby="app-confirm-title">
+      <div class="app-confirm-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <path d="M7 7.75h10l-.7 11.1a2.25 2.25 0 0 1-2.25 2.1h-4.1a2.25 2.25 0 0 1-2.25-2.1L7 7.75Zm2.25-3h5.5l.65 1.5h3.35a.75.75 0 0 1 0 1.5H5.25a.75.75 0 0 1 0-1.5H8.6l.65-1.5Z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="app-confirm-copy">
+        <h3 id="app-confirm-title">${escapeHtml(title)}</h3>
+        <p>${escapeHtml(message)}</p>
+      </div>
+      <div class="app-confirm-actions">
+        <button type="button" class="app-confirm-cancel">${escapeHtml(cancelText)}</button>
+        <button type="button" class="app-confirm-accept">${escapeHtml(confirmText)}</button>
+      </div>
+    </div>
+  `;
+
+  const close = (answer) => {
+    overlay.classList.add('is-closing');
+    window.setTimeout(() => {
+      overlay.remove();
+      resolve(answer);
+    }, 180);
+  };
+
+  overlay.addEventListener('click', (event) => {
+    if (event.target === overlay) close(false);
+  });
+  overlay.querySelector('.app-confirm-cancel').onclick = () => close(false);
+  overlay.querySelector('.app-confirm-accept').onclick = () => close(true);
+  document.body.appendChild(overlay);
+  window.setTimeout(() => overlay.classList.add('is-visible'), 20);
+  overlay.querySelector('.app-confirm-cancel').focus();
+});
+
 const setPageMeta = ({ title, description, image } = {}) => {
   const metaTitle = title || 'Gugan Furniture | Furniture Store';
   const metaDescription = description || 'Shop sofas, beds, dining sets, wardrobes, office furniture, decor and lighting at Gugan Furniture.';
@@ -2051,63 +2098,61 @@ const renderProductDetail = async (id) => {
             <div class="pdp-image">
               <img src="${escapeAttr(displayImage)}" alt="${safeProductName}" data-fallback-src="${escapeAttr(defaultImageFallback)}">
             </div>
-            ${relatedProducts.length ? `
-              <div class="pdp-related-thumbs" aria-label="Related product images">
-                ${relatedProducts.slice(0, 4).map((item) => `
-                  <button type="button" class="pdp-related-thumb" data-id="${escapeAttr(item.id)}">
-                    <img src="${escapeAttr(safeImage(item.images))}" alt="${escapeAttr(item.name || 'Related furniture')}" loading="lazy" data-fallback-src="${escapeAttr(defaultImageFallback)}">
-                    <span>${escapeHtml(item.name || 'Related')}</span>
-                  </button>
-                `).join('')}
-              </div>
-            ` : ''}
+            <div class="pdp-media-note">
+              <strong>Room-ready delivery</strong>
+              <span>Inspected finish, protected transit, and setup support for your space.</span>
+            </div>
           </div>
 
           <div class="pdp-info">
-            <p class="pdp-category-pill">${safeCategory}</p>
-            <h1 class="pdp-title">${safeProductName}</h1>
-            <h2 class="pdp-subtitle">${safeProductBrand}</h2>
+            <div class="pdp-purchase-panel">
+              <div class="pdp-heading-block">
+                <p class="pdp-category-pill">${safeCategory}</p>
+                <h1 class="pdp-title">${safeProductName}</h1>
+                <h2 class="pdp-subtitle">by ${safeProductBrand}</h2>
+              </div>
 
-            <div class="pdp-price-wrap">
-              ${discountedPrice
+              <div class="pdp-price-wrap">
+                ${discountedPrice
         ? `<span class="pdp-price">Rs. ${discountedPrice.toLocaleString('en-IN')}</span>
                    <span class="pdp-original-price">Rs. ${price.toLocaleString('en-IN')}</span>
                    <span class="badge badge-warning">${discount}% OFF</span>`
         : `<span class="pdp-price">Rs. ${price.toLocaleString('en-IN')}</span>`
       }
-            </div>
-            <p class="pdp-taxes">inclusive of all taxes. Free delivery available.</p>
-
-            <div class="pdp-size-selector">
-              <p class="pdp-size-label">CHOOSE FINISH / OPTION</p>
-              <div class="size-circles">
-                ${sizes.map(s => `<button class="size-circle" data-size="${escapeAttr(s)}">${escapeHtml(s)}</button>`).join('')}
               </div>
-            </div>
+              <p class="pdp-taxes">Inclusive of all taxes. Free delivery available.</p>
 
-            <div class="pdp-actions">
-              <button class="btn-add-bag" id="add-to-bag">ADD TO CART</button>
-              <button class="btn-wishlist ${isInWishlist ? 'active' : ''}" id="pdp-wishlist-btn">
-                ${isInWishlist ? '&#10084;&#65039; WISHLISTED' : '&#9825; WISHLIST'}
-              </button>
-            </div>
+              <div class="pdp-size-selector">
+                <p class="pdp-size-label">Select finish / option</p>
+                <div class="size-circles">
+                  ${sizes.map(s => `<button class="size-circle" data-size="${escapeAttr(s)}">${escapeHtml(s)}</button>`).join('')}
+                </div>
+              </div>
 
-            <div class="pdp-highlights">
-              <div class="pdp-highlight-card"><span>Category</span><strong>${safeCategory}</strong></div>
-              <div class="pdp-highlight-card"><span>Material</span><strong>${safeMaterial}</strong></div>
-              <div class="pdp-highlight-card"><span>Delivery</span><strong>3-7 Days</strong></div>
-              <div class="pdp-highlight-card"><span>Warranty</span><strong>12 Months</strong></div>
-            </div>
+              <div class="pdp-actions">
+                <button class="btn-add-bag" id="add-to-bag">ADD TO CART</button>
+                <button class="btn-wishlist ${isInWishlist ? 'active' : ''}" id="pdp-wishlist-btn">
+                  ${isInWishlist ? '&#10084;&#65039; WISHLISTED' : '&#9825; WISHLIST'}
+                </button>
+              </div>
 
-            <div class="pdp-details">
-              <h3>PRODUCT DESCRIPTION</h3>
-              <p>${safeProductDescription}</p>
-            </div>
+              <div class="pdp-highlights">
+                <div class="pdp-highlight-card"><span>Category</span><strong>${safeCategory}</strong></div>
+                <div class="pdp-highlight-card"><span>Material</span><strong>${safeMaterial}</strong></div>
+                <div class="pdp-highlight-card"><span>Delivery</span><strong>3-7 Days</strong></div>
+                <div class="pdp-highlight-card"><span>Warranty</span><strong>12 Months</strong></div>
+              </div>
 
-            <div class="pdp-trust-grid" aria-label="Shopping benefits">
-              <div class="pdp-trust-item"><strong>Free Delivery</strong><span>On eligible furniture orders</span></div>
-              <div class="pdp-trust-item"><strong>Easy Support</strong><span>Help with size and setup</span></div>
-              <div class="pdp-trust-item"><strong>Secure Checkout</strong><span>Protected payment flow</span></div>
+              <div class="pdp-details">
+                <h3>Product Description</h3>
+                <p>${safeProductDescription}</p>
+              </div>
+
+              <div class="pdp-trust-grid" aria-label="Shopping benefits">
+                <div class="pdp-trust-item"><strong>Free Delivery</strong><span>On eligible furniture orders</span></div>
+                <div class="pdp-trust-item"><strong>Easy Support</strong><span>Help with size and setup</span></div>
+                <div class="pdp-trust-item"><strong>Secure Checkout</strong><span>Protected payment flow</span></div>
+              </div>
             </div>
           </div>
         </div>
@@ -2165,11 +2210,19 @@ const renderCart = () => {
 
   if (cart.length === 0) {
     main.innerHTML = `
-      <div class="container py-xl text-center">
-        <div style="font-size:4rem">ðŸ›ï¸</div>
-        <h2 style="margin-top:1rem">Your Bag is Empty</h2>
-        <p style="margin-top:0.5rem;color:hsl(var(--text-muted))">Add some products to get started.</p>
-        <button class="btn-primary mt-lg" onclick="app.navigate('/shop')">SHOP NOW</button>
+      <div class="empty-cart-page">
+        <div class="empty-cart-visual" aria-hidden="true">
+          <svg viewBox="0 0 180 150" focusable="false">
+            <path d="M38 106h94c11 0 20-9 20-20V43H56l-5-18H28" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M65 62h61" stroke="currentColor" stroke-width="7" stroke-linecap="round" opacity=".3"/>
+            <circle cx="67" cy="124" r="10" fill="currentColor"/>
+            <circle cx="128" cy="124" r="10" fill="currentColor"/>
+            <path d="M78 23h45l9 20H69l9-20Z" fill="currentColor" opacity=".12"/>
+          </svg>
+        </div>
+        <h2>Your Bag is Empty</h2>
+        <p>Add some furniture pieces to get started.</p>
+        <button class="btn-primary empty-cart-btn" onclick="app.navigate('/shop')">SHOP NOW</button>
       </div>`;
     return;
   }
@@ -2247,8 +2300,19 @@ const renderCart = () => {
     actions.updateCartQuantity(id, variant, qty);
     renderCart(); renderNavbar();
   };
-  window.app.removeItem = (id, variant) => {
-    if (confirm('Remove item?')) { actions.removeFromCart(id, variant); renderCart(); renderNavbar(); }
+  window.app.removeItem = async (id, variant) => {
+    const item = store.getState().cart.find(cartItem => cartItem.id === id && cartItem.variant === variant);
+    const shouldRemove = await showConfirmDialog({
+      title: 'Remove from cart?',
+      message: item?.name ? `${item.name} will be removed from your bag.` : 'This item will be removed from your bag.',
+      confirmText: 'Remove',
+      cancelText: 'Keep item',
+      tone: 'danger',
+    });
+    if (!shouldRemove) return;
+    actions.removeFromCart(id, variant);
+    renderCart();
+    renderNavbar();
   };
   document.getElementById('place-order-btn').onclick = async () => {
     const user = store.getState().user;

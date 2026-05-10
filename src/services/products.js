@@ -175,6 +175,10 @@ const applyDemoFilters = (products, filters = {}) => {
 const productQueryCache = new Map();
 const productByIdCache = new Map();
 const demoCatalog = () => DEMO_PRODUCTS.map(normalizeProduct);
+const withTimeout = (promise, ms = 3500) => Promise.race([
+  promise,
+  new Promise((_, reject) => globalThis.setTimeout(() => reject(new Error('Request timed out')), ms)),
+]);
 const getCachedResult = (cache, key) => {
   if (!cache.has(key)) return null;
   return cache.get(key);
@@ -260,7 +264,7 @@ export const productService = {
     if (limit) query = query.range(offset, offset + limit - 1);
 
     try {
-      const { data, error, count } = await query;
+      const { data, error, count } = await withTimeout(query);
       if (error) throw error;
 
       const normalized = (data || []).map(normalizeProduct);
@@ -279,6 +283,12 @@ export const productService = {
     const cached = getCachedResult(productByIdCache, cacheKey);
     if (cached) return cached;
 
+    if (cacheKey.startsWith('demo-')) {
+      const demo = demoCatalog().find((p) => String(p.id) === cacheKey);
+      if (!demo) throw new Error('Product not found');
+      return setCachedResult(productByIdCache, cacheKey, demo);
+    }
+
     if (!isSupabaseConfigured) {
       const demo = demoCatalog().find((p) => String(p.id) === cacheKey);
       if (!demo) throw new Error('Product not found');
@@ -286,11 +296,11 @@ export const productService = {
     }
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await withTimeout(supabase
         .from('products')
         .select('*')
         .eq('id', id)
-        .single();
+        .single());
 
       if (error) throw error;
       return setCachedResult(productByIdCache, cacheKey, normalizeProduct(data));
