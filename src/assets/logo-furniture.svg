@@ -1,0 +1,11 @@
+<svg width="310" height="92" viewBox="0 0 310 92" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="310" height="92" fill="white"/>
+  <g transform="translate(11 15)">
+    <path d="M11 42V24C11 14.6 18.6 7 28 7H47C56.4 7 64 14.6 64 24V42" stroke="#2F0065" stroke-width="7" stroke-linecap="round"/>
+    <path d="M18 42H57C63.6 42 69 47.4 69 54V60H6V54C6 47.4 11.4 42 18 42Z" fill="#EC008C"/>
+    <path d="M14 60V70M61 60V70" stroke="#2F0065" stroke-width="7" stroke-linecap="round"/>
+    <path d="M26 7V33M49 7V33" stroke="#2F0065" stroke-width="5" stroke-linecap="round" opacity="0.22"/>
+  </g>
+  <text x="93" y="42" font-family="Georgia, 'Times New Roman', serif" font-size="30" font-weight="700" fill="#EC008C" letter-spacing="1">GUGAN</text>
+  <text x="93" y="70" font-family="Georgia, 'Times New Roman', serif" font-size="26" font-weight="700" fill="#2F0065" letter-spacing="0.5">FURNITURE</text>
+</svg>
