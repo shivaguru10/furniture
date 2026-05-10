@@ -2304,7 +2304,7 @@ const renderHome = async () => {
   const config = store.getState().homepage || {};
   const hero = config.hero || {
     image: DEFAULT_HERO_SLIDES[0],
-    headline: 'COMFORTABLE HOMES START HERE',
+    headline: 'COMFORTABLE & PREMIUM FURNITURE FOR HOME',
     subtext: 'Room-ready furniture for every corner',
     buttonText: 'SHOP NOW', link: '/shop', visible: true
   };
